@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>기프티콘 공유</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .gifticon-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .image-container {
+            margin: 15px 0;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+        }
+        .barcode-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .barcode-container img {
+            max-width: 300px;
+        }
+        .error-message {
+            color: red;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="gifticon-card">
+            <h1>기프티콘이 생성되었습니다</h1>
+            
+            <div th:if="${error}" class="error-message">
+                <p th:text="${error}"></p>
+            </div>
+            
+            <div th:unless="${error}">
+                <p><strong>받는 사람:</strong> <span th:text="${receiver}"></span></p>
+                <p><strong>상품명:</strong> <span th:text="${productName}"></span></p>
+                <p><strong>유효기간:</strong> <span th:text="${expiryDate}"></span></p>
+                <p th:if="${message}"><strong>메시지:</strong> <span th:text="${message}"></span></p>
+                
+                <div class="image-container" th:if="${giftImage}">
+                    <h3>기프티콘 이미지</h3>
+                    <img th:src="@{'data:image/jpeg;base64,' + ${giftImage}}" alt="기프티콘 이미지">
+                </div>
+                
+                <div class="barcode-container" th:if="${barcodeImage}">
+                    <h3>바코드</h3>
+                    <img th:src="@{'data:image/png;base64,' + ${barcodeImage}}" alt="바코드">
+                    <p><strong>바코드 번호:</strong> <span th:text="${barcodeValue}"></span></p>
+                </div>
+                
+                <div class="image-container" th:if="${productImage}">
+                    <h3>상품 이미지</h3>
+                    <img th:src="@{'data:image/jpeg;base64,' + ${productImage}}" alt="상품 이미지">
+                </div>
+            </div>
+        </div>
+        
+        <div>
+            <a href="/" class="button">새로운 기프티콘 만들기</a>
+        </div>
+    </div>
+</body>
+</html> 
