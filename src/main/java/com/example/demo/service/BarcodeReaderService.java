@@ -47,34 +47,42 @@ public class BarcodeReaderService {
             BufferedImage image = ImageIO.read(file.getInputStream());
             
             if (image == null) {
-                result.put("error", "이미지를 읽을 수 없습니다.");
-                return result;
+                throw new RuntimeException("이미지를 읽을 수 없습니다.");
             }
 
-            // 바코드 읽기 설정
-            Map<DecodeHintType, Object> hints = new HashMap<>();
-            hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-
-            // 이미지를 바이너리 비트맵으로 변환
             LuminanceSource source = new BufferedImageLuminanceSource(image);
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-            // 바코드 읽기 시도
             MultiFormatReader reader = new MultiFormatReader();
-            Result barcodeResult = reader.decode(bitmap, hints);
 
-            result.put("format", barcodeResult.getBarcodeFormat().toString());
-            result.put("value", barcodeResult.getText());
+            Map<DecodeHintType, Object> hints = new HashMap<>();
+            hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
+                    BarcodeFormat.EAN_13,
+                    BarcodeFormat.CODE_128,
+                    BarcodeFormat.EAN_8));
+            hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+            hints.put(DecodeHintType.CHARACTER_SET, "UTF-8");
+
+            Result barcodeResult = reader.decode(bitmap, hints);
+            String decodedText = barcodeResult.getText();
+            BarcodeFormat format = barcodeResult.getBarcodeFormat();
+
+            if (format == BarcodeFormat.EAN_13) {
+                if (isValidKoreanBarcode(decodedText)) {
+                    log.info("한국 EAN-13 바코드 확인됨: {}", decodedText);
+                }
+            }
+
+            result.put("format", format.toString());
+            result.put("value", decodedText);
             
-            log.info("바코드 읽기 성공 - 형식: {}, 값: {}", 
-                    barcodeResult.getBarcodeFormat(), barcodeResult.getText());
+            log.info("바코드 읽기 성공 - 형식: {}, 값: {}", format, decodedText);
             
         } catch (NotFoundException e) {
             log.warn("바코드를 찾을 수 없음");
             result.put("error", "바코드를 찾을 수 없습니다.");
         } catch (Exception e) {
             log.error("바코드 처리 중 오류", e);
-            result.put("error", "바코드 처리 중 오류가 발생했습니다.");
+            result.put("error", e.getMessage());
         }
         
         return result;
@@ -150,5 +158,86 @@ public class BarcodeReaderService {
         
         MatrixToImageWriter.writeToPath(bitMatrix, "PNG", barcodePath);
         return fileName;
+    }
+
+    public Map<String, String> readBarcodeFromFile(String imagePath) {
+        Map<String, String> result = new HashMap<>();
+        
+        try {
+            BufferedImage image = ImageIO.read(new File(imagePath));
+            
+            if (image == null) {
+                throw new IOException("이미지를 읽을 수 없습니다.");
+            }
+
+            LuminanceSource source = new BufferedImageLuminanceSource(image);
+            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+            MultiFormatReader reader = new MultiFormatReader();
+
+            Map<DecodeHintType, Object> hints = new HashMap<>();
+            hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
+                    BarcodeFormat.EAN_13,
+                    BarcodeFormat.CODE_128,
+                    BarcodeFormat.EAN_8));
+            hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+            hints.put(DecodeHintType.CHARACTER_SET, "UTF-8");
+
+            Result barcodeResult = reader.decode(bitmap, hints);
+            String decodedText = barcodeResult.getText();
+            BarcodeFormat format = barcodeResult.getBarcodeFormat();
+
+            // EAN-13 바코드인 경우 한국 바코드 검증
+            if (format == BarcodeFormat.EAN_13) {
+                if (isValidKoreanBarcode(decodedText)) {
+                    log.info("한국 EAN-13 바코드 확인됨: {}", decodedText);
+                }
+            }
+
+            result.put("format", format.toString());
+            result.put("value", decodedText);
+            
+            log.info("바코드 읽기 성공 - 형식: {}, 값: {}", format, decodedText);
+            
+        } catch (NotFoundException e) {
+            log.warn("바코드를 찾을 수 없음");
+            result.put("error", "바코드를 찾을 수 없습니다.");
+        } catch (Exception e) {
+            log.error("바코드 처리 중 오류", e);
+            result.put("error", e.getMessage());
+        }
+        
+        return result;
+    }
+
+    private boolean isValidKoreanBarcode(String barcode) {
+        if (barcode == null || barcode.length() != 13) {
+            return false;
+        }
+
+        // 한국 국가 코드(880) 체크
+        if (!barcode.startsWith("880")) {
+            return false;
+        }
+
+        // 숫자만 포함하는지 체크
+        if (!barcode.matches("\\d{13}")) {
+            return false;
+        }
+
+        // 체크섬 검증
+        try {
+            int sum = 0;
+            for (int i = 0; i < 12; i++) {
+                int digit = Character.getNumericValue(barcode.charAt(i));
+                sum += (i % 2 == 0) ? digit : digit * 3;
+            }
+            int expectedChecksum = (10 - (sum % 10)) % 10;
+            int actualChecksum = Character.getNumericValue(barcode.charAt(12));
+
+            return expectedChecksum == actualChecksum;
+        } catch (Exception e) {
+            log.error("체크섬 계산 중 오류", e);
+            return false;
+        }
     }
 } 
