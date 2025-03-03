@@ -2,8 +2,8 @@
 
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.1'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '2.7.5'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
 }
 
 group = 'com.example'
@@ -11,12 +11,6 @@ version = '0.0.1-SNAPSHOT'
 
 java {
     sourceCompatibility = '17'
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
 }
 
 repositories {
@@ -33,16 +27,12 @@ dependencies {
     // Database
     runtimeOnly 'com.h2database:h2'
     
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    
     // ZXing (바코드/QR코드)
-    implementation 'com.google.zxing:core:3.5.2'
-    implementation 'com.google.zxing:javase:3.5.2'
+    implementation 'com.google.zxing:core:3.4.1'
+    implementation 'com.google.zxing:javase:3.4.1'
     
-    // Swagger UI (SpringDoc OpenAPI 3)
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+    // Swagger UI - Spring Boot 2.7.5 호환 버전
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.12'
     
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -63,6 +53,7 @@ clean {
 // 개발 환경 설정
 bootRun {
     systemProperty 'spring.profiles.active', 'dev'
+    mainClass = 'com.example.demo.DemoApplication'
 }
 
 bootJar {
@@ -72,4 +63,9 @@ bootJar {
 
 jar {
     enabled = false
+}
+
+// 인코딩 설정
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
 } 

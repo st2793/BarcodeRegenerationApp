@@ -1,37 +1,17 @@
 package com.example.demo.controller;
 
-import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 
-@RestController
-@RequestMapping("/api")
+@Controller
 public class TestController {
+    private static final Logger logger = LoggerFactory.getLogger(TestController.class);
 
-    @PostMapping("/test")
-    public ResponseMessage testEndpoint(@RequestBody InputValue inputValue) {
-        return new ResponseMessage("Success! Received value: " + inputValue.getValue());
-    }
-
-    public static class InputValue {
-        private String value;
-
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-    }
-
-    public static class ResponseMessage {
-        private String message;
-
-        public ResponseMessage(String message) {
-            this.message = message;
-        }
-
-        public String getMessage() {
-            return message;
-        }
+    @GetMapping("/test")
+    public String showUploadForm(Model model) {
+        return "index2";
     }
 } 
